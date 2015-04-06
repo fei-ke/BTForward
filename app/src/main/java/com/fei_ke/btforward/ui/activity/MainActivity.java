@@ -8,12 +8,16 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.DecelerateInterpolator;
 
 import com.fei_ke.btforward.R;
 import com.fei_ke.btforward.ui.SlideTransformer;
 import com.fei_ke.btforward.ui.adapter.MainAdapter;
 import com.fei_ke.btforward.ui.fragment.FragmentTest_;
+import com.fei_ke.btforward.ui.view.FixedSpeedScroller;
 import com.orhanobut.logger.Logger;
+
+import java.lang.reflect.Field;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -29,6 +33,18 @@ public class MainActivity extends ActionBarActivity {
         viewPager = findViewById(this, R.id.viewPager);
         mainAdapter = new MainAdapter(getSupportFragmentManager(), viewPager);
         viewPager.setPageTransformer(false, new SlideTransformer());
+
+        try {
+            Field field = ViewPager.class.getDeclaredField("mScroller");
+            field.setAccessible(true);
+            FixedSpeedScroller scroller = new FixedSpeedScroller(viewPager.getContext(),
+                    new DecelerateInterpolator());
+            field.set(viewPager, scroller);
+            scroller.setmDuration(300);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayShowHomeEnabled(true);
