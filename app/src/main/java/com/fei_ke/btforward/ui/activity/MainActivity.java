@@ -13,6 +13,7 @@ import android.view.animation.DecelerateInterpolator;
 import com.fei_ke.btforward.R;
 import com.fei_ke.btforward.ui.SlideTransformer;
 import com.fei_ke.btforward.ui.adapter.MainAdapter;
+import com.fei_ke.btforward.ui.fragment.DeviceListFragment;
 import com.fei_ke.btforward.ui.fragment.FragmentTest_;
 import com.fei_ke.btforward.ui.view.FixedSpeedScroller;
 import com.orhanobut.logger.Logger;
@@ -49,6 +50,10 @@ public class MainActivity extends ActionBarActivity {
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayShowHomeEnabled(true);
         actionBar.setDisplayOptions(ActionBar.DISPLAY_HOME_AS_UP);
+
+
+        DeviceListFragment deviceListFragment = DeviceListFragment.newInstance();
+        mainAdapter.add(deviceListFragment);
     }
 
     @Override

@@ -2,7 +2,6 @@ package com.fei_ke.btforward.ui.adapter;
 
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 
@@ -10,7 +9,7 @@ import java.util.Stack;
 
 /**
  */
-public class MainAdapter extends FragmentStatePagerAdapter implements ViewPager.OnPageChangeListener {
+public class MainAdapter extends MyPagerAdapter implements ViewPager.OnPageChangeListener {
     private Stack<Fragment> fragments;
     private ViewPager viewPager;
 

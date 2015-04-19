@@ -6,7 +6,6 @@ import android.widget.TextView;
 
 import com.fei_ke.btforward.R;
 
-import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.EFragment;
 import org.androidannotations.annotations.InstanceState;
 import org.androidannotations.annotations.ViewById;
@@ -17,7 +16,7 @@ import java.util.Random;
  * Created by 杨金阳 on 2015/4/6.
  */
 @EFragment(R.layout.fragment_test)
-public class FragmentTest extends BaseFrafment {
+public class FragmentTest extends BaseFragment {
     public static int i;
     @ViewById
     TextView textView;
@@ -25,7 +24,7 @@ public class FragmentTest extends BaseFrafment {
     @InstanceState
     String text;
 
-    @AfterViews
+    @Override
     protected void onAfterViews() {
         if (TextUtils.isEmpty(text)) {
             text = i++ + "";
