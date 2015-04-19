@@ -33,11 +33,13 @@ public class MainAdapter extends MyPagerAdapter implements ViewPager.OnPageChang
         viewPager.setCurrentItem(size);
     }
 
-    public void pop() {
+    public boolean pop() {
         int last = fragments.size() - 1;
         if (last != 0) {
             viewPager.setCurrentItem(last - 1);
+            return true;
         }
+        return false;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.fei_ke.btforward.ui.activity;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
@@ -10,11 +11,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 
+import com.alibaba.fastjson.JSON;
 import com.fei_ke.btforward.R;
+import com.fei_ke.btforward.bean.SmsBean;
+import com.fei_ke.btforward.service.BTForwardService;
 import com.fei_ke.btforward.ui.SlideTransformer;
 import com.fei_ke.btforward.ui.adapter.MainAdapter;
 import com.fei_ke.btforward.ui.fragment.DeviceListFragment;
-import com.fei_ke.btforward.ui.fragment.FragmentTest_;
 import com.fei_ke.btforward.ui.view.FixedSpeedScroller;
 import com.orhanobut.logger.Logger;
 
@@ -27,6 +30,9 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        startService(new Intent(this, BTForwardService.class));
+        Logger.i("启动服务");
+
         Logger.init().setMethodCount(1).hideThreadInfo();
 
         super.onCreate(savedInstanceState);
@@ -66,9 +72,16 @@ public class MainActivity extends ActionBarActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int itemId = item.getItemId();
         if (itemId == android.R.id.home) {
-            mainAdapter.pop();
+            onBackPressed();
         } else if (itemId == R.id.action_test) {
-            mainAdapter.add(new FragmentTest_());
+            BTForwardService instance = BTForwardService.getInstance();
+            if (instance != null) {
+                SmsBean smsBean = new SmsBean();
+                smsBean.setFrom("未知号码");
+                smsBean.setBody("短信测试");
+                instance.write(JSON.toJSONBytes(smsBean));
+            }
+            //mainAdapter.add(new FragmentTest_());
         }
 
         return super.onOptionsItemSelected(item);
@@ -76,7 +89,9 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     public void onBackPressed() {
-        mainAdapter.pop();
+        if (!mainAdapter.pop()) {
+            super.onBackPressed();
+        }
     }
 
     public static <T> T findViewById(View v, int id) {

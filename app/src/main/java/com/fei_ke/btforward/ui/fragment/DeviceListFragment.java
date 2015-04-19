@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -17,6 +18,7 @@ import android.widget.ExpandableListView;
 import android.widget.TextView;
 
 import com.fei_ke.btforward.R;
+import com.fei_ke.btforward.service.BTForwardService;
 import com.orhanobut.logger.Logger;
 
 import org.androidannotations.annotations.EFragment;
@@ -33,11 +35,16 @@ import java.util.Set;
 public class DeviceListFragment extends BaseFragment {
     @ViewById
     protected ExpandableListView listView;
+    @ViewById
+    protected SwipeRefreshLayout swipeRefreshLayout;
 
     private DeviceListAdapter listAdapter;
 
     private BluetoothAdapter mBtAdapter;
+
     private List<BluetoothDevice> scanDevices;
+
+    private MenuItem menuItemScan;
 
     public static DeviceListFragment newInstance() {
         return DeviceListFragment_.builder().build();
@@ -49,13 +56,32 @@ public class DeviceListFragment extends BaseFragment {
 
         listAdapter = new DeviceListAdapter();
         listView.setAdapter(listAdapter);
+        for (int i = 0; i < listAdapter.getGroupCount(); i++) {
+            listView.expandGroup(i);
+        }
+
         scanDevices = new ArrayList<>();
 
         getDevices();
 
         setHasOptionsMenu(true);
-    }
 
+        swipeRefreshLayout.setColorSchemeResources(R.color.material_deep_teal_200, R.color.material_deep_teal_500, R.color.highlighted_text_material_light);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                onScanStart();
+            }
+        });
+
+        listView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
+            @Override
+            public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
+                BTForwardService.connect(getActivity(), listAdapter.getChild(groupPosition, childPosition));
+                return true;
+            }
+        });
+    }
 
     @Override
     public void onAttach(Activity activity) {
@@ -83,6 +109,7 @@ public class DeviceListFragment extends BaseFragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.fragment_device_list_menu, menu);
+        menuItemScan = menu.findItem(R.id.action_scan);
     }
 
     @Override
@@ -123,6 +150,17 @@ public class DeviceListFragment extends BaseFragment {
 
         // Request discover from BluetoothAdapter
         mBtAdapter.startDiscovery();
+        swipeRefreshLayout.setRefreshing(true);
+    }
+
+    private void onScanStart() {
+        menuItemScan.setVisible(false);
+        scanDevice();
+    }
+
+    private void onScanFinish() {
+        swipeRefreshLayout.setRefreshing(false);
+        menuItemScan.setVisible(true);
     }
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -143,20 +181,23 @@ public class DeviceListFragment extends BaseFragment {
                 }
                 // When discovery is finished, change the Activity title
             } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+                onScanFinish();
                 Logger.i("扫描完成");
             }
         }
     };
 
+
     private static class DeviceListAdapter extends BaseExpandableListAdapter {
-        private List<List<BluetoothDevice>> mData;
+        private List<List<BluetoothDevice>> mData = new ArrayList<>();
 
         public List<List<BluetoothDevice>> getData() {
             return mData;
         }
 
         public void setData(List<List<BluetoothDevice>> data) {
-            this.mData = data;
+            mData.clear();
+            mData.addAll(data);
         }
 
         @Override
@@ -166,12 +207,17 @@ public class DeviceListFragment extends BaseFragment {
 
         @Override
         public int getChildrenCount(int groupPosition) {
-            return getGroup(groupPosition).size();
+            List<BluetoothDevice> group = getGroup(groupPosition);
+            return group == null ? 0 : group.size();
         }
 
         @Override
         public List<BluetoothDevice> getGroup(int groupPosition) {
-            return mData.get(groupPosition);
+            try {
+                return mData.get(groupPosition);
+            } catch (Exception e) {
+                return null;
+            }
         }
 
         @Override

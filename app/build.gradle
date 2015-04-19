@@ -42,4 +42,5 @@ dependencies {
     compile 'com.android.support:appcompat-v7:21.0.3'
     compile 'com.orhanobut:logger:1.4'
     compile 'com.ToxicBakery.viewpager.transforms:view-pager-transforms:1.1.0@aar'
+    compile 'com.alibaba:fastjson:1.2.5'
 }
