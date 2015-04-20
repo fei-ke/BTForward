@@ -43,4 +43,5 @@ dependencies {
     compile 'com.orhanobut:logger:1.4'
     compile 'com.ToxicBakery.viewpager.transforms:view-pager-transforms:1.1.0@aar'
     compile 'com.alibaba:fastjson:1.2.5'
+    compile 'de.greenrobot:eventbus:2.4.0'
 }

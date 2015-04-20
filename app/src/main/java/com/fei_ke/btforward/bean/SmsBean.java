@@ -22,4 +22,12 @@ public class SmsBean {
     public void setBody(String body) {
         this.body = body;
     }
+
+    @Override
+    public String toString() {
+        return "SmsBean{" +
+                "from='" + from + '\'' +
+                ", body='" + body + '\'' +
+                '}';
+    }
 }

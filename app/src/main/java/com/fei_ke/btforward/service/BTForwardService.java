@@ -13,12 +13,23 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.ParcelUuid;
 
+import com.alibaba.fastjson.JSON;
+import com.fei_ke.btforward.bean.SmsBean;
+import com.fei_ke.btforward.event.ConnectEvent;
+import com.fei_ke.btforward.event.MessageEvent;
 import com.orhanobut.logger.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
+
+import de.greenrobot.event.EventBus;
+
+import static com.fei_ke.btforward.event.ConnectEvent.STATE_CONNECTED;
+import static com.fei_ke.btforward.event.ConnectEvent.STATE_CONNECTING;
+import static com.fei_ke.btforward.event.ConnectEvent.STATE_LISTEN;
+import static com.fei_ke.btforward.event.ConnectEvent.STATE_NONE;
 
 /**
  * Created by 杨金阳 on 2015/4/19.
@@ -37,22 +48,20 @@ public class BTForwardService extends Service {
 
     // Member fields
     private BluetoothAdapter mAdapter;
-    private Handler mHandler;
     private AcceptThread mSecureAcceptThread;
     private AcceptThread mInsecureAcceptThread;
     private ConnectThread mConnectThread;
     private ConnectedThread mConnectedThread;
     private int mState;
 
-    // Constants that indicate the current connection state
-    public static final int STATE_NONE = 0;       // we're doing nothing
-    public static final int STATE_LISTEN = 1;     // now listening for incoming connections
-    public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
-    public static final int STATE_CONNECTED = 3;  // now connected to a remote device
+    private BluetoothDevice mDevice;
 
     public static BTForwardService getInstance() {
         return instance;
     }
+
+
+    Handler handler = new Handler();
 
     public static synchronized void connect(Context context, BluetoothDevice device) {
         if (instance != null) {
@@ -107,9 +116,11 @@ public class BTForwardService extends Service {
     private synchronized void setState(int state) {
         Logger.i(state + "");
         mState = state;
-
-        //TODO Give the new state to the Handler so the UI Activity can update
-        // mHandler.obtainMessage(Constants.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
+        if (state != STATE_CONNECTED || state != STATE_CONNECTING) {
+            mDevice = null;
+        }
+        //Give the new state to the Handler so the UI Activity can update
+        EventBus.getDefault().postSticky(new ConnectEvent(mDevice, state));
     }
 
     /**
@@ -124,8 +135,8 @@ public class BTForwardService extends Service {
      * session in listening (server) mode. Called by the Activity onResume()
      */
     public synchronized void start() {
-        Logger.i("start")
-        ;
+        Logger.i("start");
+
         // Cancel any thread attempting to make a connection
         if (mConnectThread != null) {
             mConnectThread.cancel();
@@ -188,6 +199,7 @@ public class BTForwardService extends Service {
      */
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
     public synchronized void connected(BluetoothSocket socket, BluetoothDevice device, final String socketType) {
+
         Logger.i("socketType : " + socketType);
 
         ParcelUuid[] uuids = device.getUuids();
@@ -221,12 +233,7 @@ public class BTForwardService extends Service {
         mConnectedThread = new ConnectedThread(socket, socketType);
         mConnectedThread.start();
 
-        //TODO Send the name of the connected device back to the UI Activity
-        //Message msg = mHandler.obtainMessage(Constants.MESSAGE_DEVICE_NAME);
-        //Bundle bundle = new Bundle();
-        //bundle.putString(Constants.DEVICE_NAME, device.getName());
-        //msg.setData(bundle);
-        //mHandler.sendMessage(msg);
+        mDevice = device;
 
         setState(STATE_CONNECTED);
     }
@@ -495,15 +502,16 @@ public class BTForwardService extends Service {
             Logger.i("BEGIN mConnectedThread");
             byte[] buffer = new byte[1024];
             int bytes;
-
             // Keep listening to the InputStream while connected
             while (true) {
                 try {
                     // Read from the InputStream
                     bytes = mmInStream.read(buffer);
-                    Logger.d(new String(buffer, 0, bytes));
-                    //TODO Send the obtained bytes to the UI Activity
-                    //mHandler.obtainMessage(Constants.MESSAGE_READ, bytes, -1, buffer).sendToTarget();
+                    final String message = new String(buffer, 0, bytes);
+                    Logger.d(message);
+
+                    //Send the obtained bytes to the UI Activity
+                    EventBus.getDefault().post(new MessageEvent(JSON.parseObject(message, SmsBean.class)));
                 } catch (IOException e) {
                     Logger.e("disconnected", e);
                     connectionLost();

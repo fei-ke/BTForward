@@ -16,8 +16,11 @@ import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.ExpandableListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.fei_ke.btforward.R;
+import com.fei_ke.btforward.event.ConnectEvent;
+import com.fei_ke.btforward.event.MessageEvent;
 import com.fei_ke.btforward.service.BTForwardService;
 import com.orhanobut.logger.Logger;
 
@@ -27,6 +30,8 @@ import org.androidannotations.annotations.ViewById;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import de.greenrobot.event.EventBus;
 
 /**
  * Created by 杨金阳 on 2015/4/19.
@@ -97,12 +102,15 @@ public class DeviceListFragment extends BaseFragment {
         filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         getActivity().registerReceiver(mReceiver, filter);
 
+        EventBus.getDefault().register(this);
     }
 
     @Override
     public void onDetach() {
         Logger.i("注销监听器");
         getActivity().unregisterReceiver(mReceiver);
+
+        EventBus.getDefault().unregister(this);
         super.onDetach();
     }
 
@@ -161,6 +169,17 @@ public class DeviceListFragment extends BaseFragment {
     private void onScanFinish() {
         swipeRefreshLayout.setRefreshing(false);
         menuItemScan.setVisible(true);
+    }
+
+    public void onEventMainThread(ConnectEvent connectEvent) {
+        int state = connectEvent.getState();
+        if (state == ConnectEvent.STATE_CONNECTED) {
+            Toast.makeText(getActivity(), connectEvent.getDevice().getName() + " 连接成功", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void onEventMainThread(MessageEvent messageEvent) {
+        Toast.makeText(getActivity(), messageEvent.getSmsBean().toString(), Toast.LENGTH_SHORT).show();
     }
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
