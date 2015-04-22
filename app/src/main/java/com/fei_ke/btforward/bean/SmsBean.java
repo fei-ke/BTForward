@@ -7,6 +7,14 @@ public class SmsBean {
     private String from;
     private String body;
 
+    public SmsBean(String from, String body) {
+        this.from = from;
+        this.body = body;
+    }
+
+    public SmsBean() {
+    }
+
     public String getFrom() {
         return from;
     }

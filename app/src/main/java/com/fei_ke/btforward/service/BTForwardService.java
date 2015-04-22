@@ -9,7 +9,6 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
-import android.os.Handler;
 import android.os.IBinder;
 import android.os.ParcelUuid;
 
@@ -60,9 +59,6 @@ public class BTForwardService extends Service {
         return instance;
     }
 
-
-    Handler handler = new Handler();
-
     public static synchronized void connect(Context context, BluetoothDevice device) {
         if (instance != null) {
             instance.connect(device);
@@ -104,7 +100,7 @@ public class BTForwardService extends Service {
 
 
     private synchronized void connect(BluetoothDevice device) {
-        connect(mAdapter.getRemoteDevice(device.getAddress()), true);
+        connect(device, true);
     }
 
 
@@ -116,9 +112,9 @@ public class BTForwardService extends Service {
     private synchronized void setState(int state) {
         Logger.i(state + "");
         mState = state;
-        if (state != STATE_CONNECTED || state != STATE_CONNECTING) {
-            mDevice = null;
-        }
+        //if (state != STATE_CONNECTED || state != STATE_CONNECTING) {
+        //    mDevice = null;
+        //}
         //Give the new state to the Handler so the UI Activity can update
         EventBus.getDefault().postSticky(new ConnectEvent(mDevice, state));
     }
@@ -298,6 +294,7 @@ public class BTForwardService extends Service {
         // Start the service over to restart listening mode
         //TODO 重试
         //BluetoothChatService.this.start();
+        Logger.i("连接失败");
     }
 
     /**
@@ -313,6 +310,7 @@ public class BTForwardService extends Service {
 
         //TODO 重试
         //BluetoothChatService.this.start();
+        Logger.i("连接丢失");
     }
 
     /**
@@ -465,6 +463,7 @@ public class BTForwardService extends Service {
         public void cancel() {
             try {
                 mmSocket.close();
+                Logger.i("取消连接");
             } catch (IOException e) {
                 Logger.e("close() of connect " + mSocketType + " socket failed", e);
             }
@@ -509,9 +508,13 @@ public class BTForwardService extends Service {
                     bytes = mmInStream.read(buffer);
                     final String message = new String(buffer, 0, bytes);
                     Logger.d(message);
-
                     //Send the obtained bytes to the UI Activity
-                    EventBus.getDefault().post(new MessageEvent(JSON.parseObject(message, SmsBean.class)));
+                    SmsBean smsBean = JSON.parseObject(message, SmsBean.class);
+                    //SmsUtil.createFakeSms(getApplicationContext(), smsBean.getFrom(), smsBean.getBody());
+                    //TODO 发送短信通知
+                    MessageEvent event = new MessageEvent(smsBean);
+                    event.setDevice(mDevice);
+                    EventBus.getDefault().post(event);
                 } catch (IOException e) {
                     Logger.e("disconnected", e);
                     connectionLost();

@@ -1,5 +1,7 @@
 package com.fei_ke.btforward.event;
 
+import android.bluetooth.BluetoothDevice;
+
 import com.fei_ke.btforward.bean.SmsBean;
 
 /**
@@ -7,6 +9,7 @@ import com.fei_ke.btforward.bean.SmsBean;
  */
 public class MessageEvent {
     SmsBean smsBean;
+    BluetoothDevice device;
 
     public MessageEvent(SmsBean smsBean) {
         this.smsBean = smsBean;
@@ -18,5 +21,13 @@ public class MessageEvent {
 
     public void setSmsBean(SmsBean smsBean) {
         this.smsBean = smsBean;
+    }
+
+    public BluetoothDevice getDevice() {
+        return device;
+    }
+
+    public void setDevice(BluetoothDevice device) {
+        this.device = device;
     }
 }

@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AlertDialog;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -19,6 +20,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.fei_ke.btforward.R;
+import com.fei_ke.btforward.bean.SmsBean;
 import com.fei_ke.btforward.event.ConnectEvent;
 import com.fei_ke.btforward.event.MessageEvent;
 import com.fei_ke.btforward.service.BTForwardService;
@@ -174,12 +176,24 @@ public class DeviceListFragment extends BaseFragment {
     public void onEventMainThread(ConnectEvent connectEvent) {
         int state = connectEvent.getState();
         if (state == ConnectEvent.STATE_CONNECTED) {
-            Toast.makeText(getActivity(), connectEvent.getDevice().getName() + " 连接成功", Toast.LENGTH_SHORT).show();
+            if (connectEvent.getDevice() != null) {
+                Toast.makeText(getActivity(), connectEvent.getDevice().getName() + " 连接成功", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(getActivity(), "连接状态 " + connectEvent.getState(), Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
     public void onEventMainThread(MessageEvent messageEvent) {
-        Toast.makeText(getActivity(), messageEvent.getSmsBean().toString(), Toast.LENGTH_SHORT).show();
+        SmsBean smsBean = messageEvent.getSmsBean();
+        Toast.makeText(getActivity(), smsBean.toString(), Toast.LENGTH_SHORT).show();
+        AlertDialog dialog = new AlertDialog.Builder(getActivity())
+                .setTitle("来自" + messageEvent.getDevice().getName())
+                .setMessage(smsBean.getBody())
+                .setPositiveButton("确定", null)
+                .create();
+        //dialog.getWindow().addFlags(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+        dialog.show();
     }
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
